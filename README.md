@@ -1,3 +1,3 @@
 # be-consoling
 
-Adopt same binding syntax as be-noticed, but log to console.
+Log changes of be-value-added to the console (and possibly other things as well.)

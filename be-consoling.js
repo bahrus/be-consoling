@@ -35,12 +35,36 @@ class BeConsoling extends BE {
      */
     hydrate(self) {
         const { enhancedElement} = self;
-        const originalDispatch = enhancedElement.dispatchEvent;
+        let proto = enhancedElement;
+        let prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
+        while(proto && !prop){
+            proto = Object.getPrototypeOf(proto);
+            prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
+        }
+        if(prop === undefined){
+            throw "Can't find dispatchEvent.";
+        }
+        const originalDispatch = proto.dispatchEvent;
 
-        enhancedElement.dispatchEvent = function(event){
+        proto.dispatchEvent = function(event){
             console.log(`Dispatched event: ${event.type}`, event, 'on', this);
             return originalDispatch.call(this, event);
         };
+        const allEvents = [
+            "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout",
+            "keydown", "keyup", "keypress",
+            "focus", "blur", "change", "input", "submit", "reset",
+            "drag", "dragstart", "dragend", "dragenter", "dragleave", "dragover", "drop",
+            "touchstart", "touchmove", "touchend", "touchcancel",
+            "wheel", "scroll",
+            "contextmenu", "resize", "error", "load"
+        ];
+
+        allEvents.forEach(eventType => {
+            enhancedElement.addEventListener(eventType, e => {
+                console.log(`Event: ${eventType}`, e);
+            }, true); // useCapture = true to catch events in capture phase
+        });
         return /** @type {PAP} */ ({
             resolved: true,
         });

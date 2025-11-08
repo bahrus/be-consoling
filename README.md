@@ -6,6 +6,14 @@
 
 Logs all events that the div element fires to the console.
 
+In more casual environments, can use on canonical name.
+
+This package contains one such alternate name:
+
+```html
+<div 🪵></div>
+```
+
 ## Viewing Locally
 
 Any web server that serves static files (html, css, js) will do but...

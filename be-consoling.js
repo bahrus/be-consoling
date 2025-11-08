@@ -3,14 +3,14 @@ import { propInfo, rejected, resolved } from 'be-enhanced/cc.js';
 import { BE } from 'be-enhanced/BE.js';
 import {dispatchEvent as de} from 'trans-render/positractions/dispatchEvent.js';
 /** @import {BEConfig, IEnhancement, BEAllProps} from './ts-refs/be-enhanced/types.d.ts' */
-/** @import {Actions, PAP, AllProps, AP, BAP} from './ts-refs/be-consoling/types' */;
+/** @import {Actions, PAP, AllProps, AP, BAP, dispatch} from './ts-refs/be-consoling/types' */;
 
 /**
  * @implements {Actions}
  * 
  */
 class BeConsoling extends BE {
-        /**
+    /**
      * @type {BEConfig<BAP, Actions & IEnhancement>}
      */
     static config = {
@@ -24,38 +24,64 @@ class BeConsoling extends BE {
             }
         },
         positractions: [resolved, rejected],
-        compacts: {
-            when_level_changes_call_hydrate: 0,
+        actions: {
+            hydrate:{
+                ifAllOf: ['level', 'ignore']
+            }
         }
     };
 
     de = de;
 
-        /**
+    /**
+     * @type {AbortController | undefined}
+     */
+    #abortController;
+
+    /**
+     * @type {dispatch | undefined}
+     */
+    #originalDispatch; 
+
+    /**
      * 
      * @param {BAP} self 
      * @returns 
      */
     hydrate(self) {
+        let abortController = this.#abortController;
+        if(abortController !== undefined){
+            abortController.abort();
+            abortController = new AbortController();
+        }else{
+            abortController = new AbortController();
+        }
+        this.#abortController = abortController;
         const { enhancedElement,level, ignore} = self;
-        let proto = enhancedElement;
-        let prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
-        while(proto && !prop){
-            proto = Object.getPrototypeOf(proto);
-            prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
-        }
-        if(prop === undefined){
-            throw "Can't find dispatchEvent.";
-        }
-        const originalDispatch = proto.dispatchEvent;
-
-        proto.dispatchEvent = function(event){
-            if(!ignore.includes(event.type)){
-                console[level](`Dispatched event: ${event.type}`, event, this);
+        let originalDispatch = this.#originalDispatch;
+        if(originalDispatch === undefined){
+            let proto = enhancedElement;
+            let prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
+            while(proto && !prop){
+                proto = Object.getPrototypeOf(proto);
+                prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
             }
-            
-            return originalDispatch.call(this, event);
+            if(prop === undefined){
+                throw "Can't find dispatchEvent.";
+            }
+            originalDispatch = proto.dispatchEvent;
+            if(originalDispatch === undefined) throw 500;
+            proto.dispatchEvent = function(event){
+                if(!ignore.includes(event.type)){
+                    console[level](`Dispatched event: ${event.type}`, event, this);
+                }
+                
+                return /** @type {boolean} */ ( originalDispatch.call(this, event));
+            }
         };
+
+
+
         const allEvents = [
             "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout",
             "keydown", "keyup", "keypress",
@@ -70,7 +96,7 @@ class BeConsoling extends BE {
             if(ignore.includes(eventType)) return;
             enhancedElement.addEventListener(eventType, e => {
                 console[level](`Event: ${eventType}`, e);
-            }, true); // useCapture = true to catch events in capture phase
+            }, {signal: abortController.signal}); // useCapture = true to catch events in capture phase
         });
         return /** @type {PAP} */ ({
             resolved: true,

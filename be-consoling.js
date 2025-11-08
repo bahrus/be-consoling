@@ -15,14 +15,17 @@ class BeConsoling extends BE {
      */
     static config = {
         propDefaults: {
-            logLevel: 'log'
+            level: 'log'
         },
         propInfo: {
             ...propInfo,
+            ignore: {
+                def: ['mouseover', 'mouseout', 'mousemove']
+            }
         },
         positractions: [resolved, rejected],
         compacts: {
-            when_logLevel_changes_call_hydrate: 0,
+            when_level_changes_call_hydrate: 0,
         }
     };
 
@@ -34,7 +37,7 @@ class BeConsoling extends BE {
      * @returns 
      */
     hydrate(self) {
-        const { enhancedElement} = self;
+        const { enhancedElement,level, ignore} = self;
         let proto = enhancedElement;
         let prop = Object.getOwnPropertyDescriptor(proto, 'dispatchEvent');
         while(proto && !prop){
@@ -47,7 +50,10 @@ class BeConsoling extends BE {
         const originalDispatch = proto.dispatchEvent;
 
         proto.dispatchEvent = function(event){
-            console.log(`Dispatched event: ${event.type}`, event, 'on', this);
+            if(!ignore.includes(event.type)){
+                console[level](`Dispatched event: ${event.type}`, event, this);
+            }
+            
             return originalDispatch.call(this, event);
         };
         const allEvents = [
@@ -61,8 +67,9 @@ class BeConsoling extends BE {
         ];
 
         allEvents.forEach(eventType => {
+            if(ignore.includes(eventType)) return;
             enhancedElement.addEventListener(eventType, e => {
-                console.log(`Event: ${eventType}`, e);
+                console[level](`Event: ${eventType}`, e);
             }, true); // useCapture = true to catch events in capture phase
         });
         return /** @type {PAP} */ ({

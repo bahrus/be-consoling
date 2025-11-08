@@ -8,11 +8,22 @@ import { BeHive, seed, MountObserver } from 'be-hive/be-hive.js';
  */
 export const emc = {
     base: 'be-consoling',
+    branches: ['', 'level', 'ignore'],
     map: {
         '0.0': {
+            instanceOf: 'Object',
+            mapsTo: '.',
+        },
+        '1.0': {
             instanceOf: 'String',
-            mapsTo: 'logLevel',
+            mapsTo: 'level'
+        },
+        '2.0': {
+            instanceOf: 'Object',
+            mapsTo: 'ignore'
         }
+
+
     },
     enhPropKey: 'beConsoling',
     importEnh: async () => {

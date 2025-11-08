@@ -14,7 +14,7 @@ export const emc = {
             mapsTo: 'logLevel',
         }
     },
-    enhPropKey: 'beABeacon',
+    enhPropKey: 'beConsoling',
     importEnh: async () => {
         const { BeConsoling } = await import('./be-consoling.js');
         return BeConsoling;

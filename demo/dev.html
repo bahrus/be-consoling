@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Default settings</title>
     <!-- #include virtual="/imports.html" -->
+    <be-hive>
+        <script type=emc src="be-consoling/emc.json"></script>
+    </be-hive>
+    <script type=module>
+        import 'be-hive/be-hive.js';
+    </script>
 </head>
 <body>
     <div be-consoling>
         I am here
     </div>
-    <script type=module>
-        import '/emc.js';
-    </script>
 </body>
 </html>

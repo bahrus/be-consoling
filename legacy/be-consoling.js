@@ -1,47 +1,37 @@
 // @ts-check
-/** @import {Actions, PAP, AllProps, AP} from './types/be-consoling/types' */;
-/** @import {RoundaboutOptions} from './types/roundabout/types' */;
-/** @import {ElementEnhancementGateway, SpawnContext} from './types/assign-gingerly/types' */;
-/** @import {EMC} from './types/mount-observer/types' */;
-/** @import {RAConfig} from './types/roundabout/types' */;
+import { propInfo, rejected, resolved } from 'be-enhanced/cc.js';
+import { BE } from 'be-enhanced/BE.js';
+import {dispatchEvent as de} from 'trans-render/positractions/dispatchEvent.js';
+/** @import {BEConfig, IEnhancement, BEAllProps} from './ts-refs/be-enhanced/types.d.ts' */
+/** @import {Actions, PAP, AllProps, AP, BAP, dispatch} from './ts-refs/be-consoling/types' */;
 
 /**
  * @implements {Actions}
+ * 
  */
-class BeConsoling {
-
+class BeConsoling extends BE {
     /**
-     * @this {AllProps & Actions}
-     * @param {Element & ElementEnhancementGateway} enhancedElement 
-     * @param {SpawnContext} ctx 
-     * @param {PAP} initVals 
+     * @type {BEConfig<BAP, Actions & IEnhancement>}
      */
-    constructor(enhancedElement, ctx, initVals){
-        this.init(this, enhancedElement, ctx, initVals);
-    }
-
-    /**
-     * @param {AllProps} self 
-     * @param {Element & ElementEnhancementGateway} enhancedElement 
-     * @param {SpawnContext} ctx 
-     * @param {PAP} initVals 
-     */
-    async init(self, enhancedElement, ctx, initVals){
-        const {customData} = /** @type {EMC<any, AllProps, Element, RAConfig<AllProps, Actions>>} */ (ctx.emc);
-        /**
-         * @type {RoundaboutOptions}
-         */
-        const raOptions = {
-            ...customData,
-            vm: self,
-            initialPropVals: {
-                enhancedElement,
-                ...customData?.defaultPropVals,
-                ...initVals
+    static config = {
+        propDefaults: {
+            level: 'log'
+        },
+        propInfo: {
+            ...propInfo,
+            ignore: {
+                def: ['mouseover', 'mouseout', 'mousemove']
             }
-        };
-        (await import('roundabout-lib/roundabout.js')).roundabout(raOptions);
-    }
+        },
+        positractions: [resolved, rejected],
+        actions: {
+            hydrate:{
+                ifAllOf: ['level', 'ignore']
+            }
+        }
+    };
+
+    de = de;
 
     /**
      * @type {AbortController | undefined}
@@ -49,23 +39,25 @@ class BeConsoling {
     #abortController;
 
     /**
-     * @type {Function | undefined}
+     * @type {dispatch | undefined}
      */
-    #originalDispatch;
+    #originalDispatch; 
 
     /**
-     * @param {AP} self 
-     * @returns {PAP}
+     * 
+     * @param {BAP} self 
+     * @returns 
      */
     hydrate(self) {
         let abortController = this.#abortController;
         if(abortController !== undefined){
             abortController.abort();
+            abortController = new AbortController();
+        }else{
+            abortController = new AbortController();
         }
-        abortController = new AbortController();
         this.#abortController = abortController;
-
-        const { enhancedElement, level, ignore } = self;
+        const { enhancedElement,level, ignore} = self;
         let originalDispatch = this.#originalDispatch;
         if(originalDispatch === undefined){
             let proto = enhancedElement;
@@ -79,15 +71,16 @@ class BeConsoling {
             }
             originalDispatch = proto.dispatchEvent;
             if(originalDispatch === undefined) throw 500;
-            this.#originalDispatch = originalDispatch;
-            const od = originalDispatch;
             proto.dispatchEvent = function(event){
                 if(!ignore.includes(event.type)){
                     console[level](`Dispatched event: ${event.type}`, event, this);
                 }
-                return /** @type {boolean} */ (od.call(this, event));
+                
+                return /** @type {boolean} */ ( originalDispatch.call(this, event));
             }
-        }
+        };
+
+
 
         const allEvents = [
             "click", "dblclick", "mousedown", "mouseup", "mousemove", "mouseover", "mouseout",
@@ -103,13 +96,13 @@ class BeConsoling {
             if(ignore.includes(eventType)) return;
             enhancedElement.addEventListener(eventType, e => {
                 console[level](`Event: ${eventType}`, e);
-            }, {signal: abortController.signal});
+            }, {signal: abortController.signal}); // useCapture = true to catch events in capture phase
         });
-
         return /** @type {PAP} */ ({
             resolved: true,
         });
     }
 }
 
-export { BeConsoling };
+await BeConsoling.bootUp();
+export {BeConsoling};
